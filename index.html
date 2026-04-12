@@ -2,185 +2,314 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shellproof — Proof-carrying shells for autonomous agents</title>
-<meta name="description" content="Proof-carrying shells for autonomous agents">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shellproof — On-Chain Audit Trails for Base</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0a0a0f;--surface:#111118;--border:#1e1e2e;
-  --text:#e0e0e0;--text-dim:#888;--accent:#06FFA5;
-  --accent2:#00F5FF;--radius:16px;
-}
-body{
-  font-family:'Inter',-apple-system,system-ui,sans-serif;
-  background:var(--bg);color:var(--text);line-height:1.6;
-  min-height:100vh;
-}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--green:#00ff88;--green2:#00cc66;--green3:#00ff8855;--amber:#ffb300;--dim:#1a2e1a;--bg:#050a05;--bg2:#0a0f0a;--border:#1a3a1a;--text:#b0d4b0;--bright:#e0ffe0}
+html{scroll-behavior:smooth}
+body{font-family:'Fira Code',monospace;background:var(--bg);color:var(--text);overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:9999}
 /* NAV */
-nav{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:20px 40px;border-bottom:1px solid var(--border);
-  max-width:1200px;margin:0 auto;
-}
-.nav-name{font-weight:700;font-size:18px}
-.btn{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:10px 24px;border-radius:40px;font-weight:600;font-size:14px;
-  background:var(--accent);color:#0a0a0f;border:none;cursor:pointer;
-  transition:opacity .2s;
-}
-.btn:hover{opacity:.85;text-decoration:none}
-
+nav{position:fixed;top:0;width:100%;z-index:1000;background:rgba(5,10,5,0.95);border-bottom:1px solid var(--border);padding:12px 5%;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(8px)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo svg{width:32px;height:32px}
+.nav-logo span{color:var(--green);font-size:1.1rem;font-weight:700;letter-spacing:3px}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:var(--text);text-decoration:none;font-size:.75rem;letter-spacing:2px;transition:color .2s}
+.nav-links a:hover{color:var(--green)}
+.btn{background:transparent;border:1px solid var(--green);color:var(--green);padding:8px 20px;font-family:'Fira Code',monospace;font-size:.75rem;letter-spacing:2px;cursor:pointer;text-decoration:none;transition:all .2s;display:inline-block}
+.btn:hover{background:var(--green);color:#000}
+.btn-solid{background:var(--green);color:#000;border:1px solid var(--green)}
+.btn-solid:hover{background:transparent;color:var(--green)}
+/* FLOATING SHAPES BG */
+.bg-anim{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.shape{position:absolute;border:1px solid rgba(0,255,136,0.08);animation:floatShape 20s infinite linear}
+.shape:nth-child(1){width:300px;height:300px;top:10%;left:5%;animation-duration:25s}
+.shape:nth-child(2){width:200px;height:200px;top:60%;right:8%;animation-duration:18s;animation-delay:-8s}
+.shape:nth-child(3){width:150px;height:150px;top:30%;right:20%;animation-duration:22s;animation-delay:-4s}
+@keyframes floatShape{0%{transform:translateY(0) rotate(0deg);opacity:.3}50%{opacity:.6}100%{transform:translateY(-40px) rotate(360deg);opacity:.3}}
 /* HERO */
-.hero{
-  text-align:center;padding:100px 40px 60px;
-  max-width:800px;margin:0 auto;
-}
-.logo-container{
-  width:120px;height:120px;margin:0 auto 32px;
-  border-radius:28px;overflow:hidden;
-}
-.logo-container svg{width:100%;height:100%;display:block}
-.logo-fallback{
-  width:120px;height:120px;margin:0 auto 32px;
-  border-radius:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));
-  display:flex;align-items:center;justify-content:center;
-  font-size:56px;font-weight:800;color:#0a0a0f;
-}
-.hero h1{
-  font-size:clamp(36px,5vw,64px);font-weight:800;
-  letter-spacing:-2px;margin-bottom:16px;
-  background:linear-gradient(135deg,#fff,#aaa);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
-.hero .tagline{
-  font-size:20px;color:var(--text-dim);max-width:600px;
-  margin:0 auto 32px;
-}
-.badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
-.badge{
-  padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;
-  background:var(--surface);border:1px solid var(--border);color:var(--accent);
-  text-transform:uppercase;letter-spacing:1px;
-}
-
-/* ABOUT */
-.about{
-  max-width:800px;margin:0 auto;padding:60px 40px;
-}
-.about h2{font-size:28px;font-weight:700;margin-bottom:20px}
-.about p{color:var(--text-dim);font-size:16px;margin-bottom:14px}
-
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:100px 5% 60px;position:relative;z-index:1}
+.hero-inner{max-width:900px;width:100%}
+.hero-pre{color:var(--green2);font-size:.75rem;letter-spacing:3px;margin-bottom:16px}
+.hero-pre span{color:var(--amber)}
+.hero-logo-wrap{display:flex;justify-content:center;margin-bottom:32px}
+.hero-logo-wrap svg{width:100px;height:100px}
+h1{font-size:clamp(1.8rem,4vw,3rem);color:var(--bright);line-height:1.2;margin-bottom:8px;font-weight:700;letter-spacing:1px}
+h1 span{color:var(--green)}
+.cursor{display:inline-block;width:3px;height:1.2em;background:var(--green);vertical-align:text-bottom;animation:blink 1s step-end infinite;margin-left:4px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.hero-tagline{color:var(--text);font-size:.9rem;line-height:1.8;margin:24px 0 36px;max-width:700px;border-left:2px solid var(--green);padding-left:16px}
+.hero-btns{display:flex;gap:16px;flex-wrap:wrap}
+.ascii-border{color:var(--green2);font-size:.65rem;opacity:.5;margin:20px 0;white-space:pre;overflow:hidden}
+/* SECTIONS */
+section{padding:80px 5%;position:relative;z-index:1}
+.section-label{color:var(--green2);font-size:.7rem;letter-spacing:4px;margin-bottom:8px}
+h2{font-size:clamp(1.4rem,3vw,2rem);color:var(--bright);margin-bottom:32px;font-weight:700}
+h2 span{color:var(--green)}
+.section-divider{text-align:center;color:var(--green);font-size:.6rem;opacity:.3;margin:0 0 40px;letter-spacing:2px}
+/* PROBLEM */
+#problem{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.problem-content p{color:var(--text);font-size:.85rem;line-height:1.9;margin-bottom:20px;max-width:800px}
+.problem-content p strong{color:var(--amber)}
+/* SOLUTION */
+.solution-box{background:rgba(0,255,136,0.03);border:1px solid var(--border);padding:32px;max-width:860px}
+.solution-box p{color:var(--text);font-size:.85rem;line-height:1.9;margin-bottom:16px}
+.solution-box p:last-child{margin-bottom:0}
+.solution-box code{color:var(--green);background:rgba(0,255,136,0.08);padding:2px 6px;font-size:.8rem}
+/* FEATURES */
+#features{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.feat-card{background:var(--bg);border:1px solid var(--border);padding:24px;transition:all .3s;position:relative;overflow:hidden}
+.feat-card::before{content:'';position:absolute;top:0;left:0;width:0;height:2px;background:var(--green);transition:width .3s}
+.feat-card:hover::before{width:100%}
+.feat-card:hover{border-color:var(--green2);transform:translateY(-2px)}
+.feat-icon{font-size:1.5rem;margin-bottom:12px}
+.feat-card h3{color:var(--bright);font-size:.85rem;margin-bottom:8px;letter-spacing:1px}
+.feat-card p{color:var(--text);font-size:.75rem;line-height:1.7}
+/* HOW IT WORKS */
+.steps{display:flex;flex-direction:column;gap:24px;max-width:800px}
+.step{display:flex;gap:20px;align-items:flex-start}
+.step-num{color:var(--green);font-size:1.5rem;font-weight:700;min-width:48px;line-height:1}
+.step-content h3{color:var(--bright);font-size:.9rem;margin-bottom:6px}
+.step-content p{color:var(--text);font-size:.8rem;line-height:1.7}
 /* METRICS */
-.metrics{
-  max-width:1000px;margin:0 auto;padding:60px 40px;
-}
-.metrics h2{font-size:28px;font-weight:700;margin-bottom:32px;text-align:center}
-.metrics-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:20px;
-}
-.metric-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:28px 24px;text-align:center;
-}
-.metric-value{
-  font-size:22px;font-weight:700;color:var(--accent);margin-bottom:8px;
-}
-.metric-label{font-size:14px;color:var(--text-dim)}
-
+#metrics{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
+.metric-card{border:1px solid var(--border);padding:28px 20px;text-align:center;background:var(--bg);transition:all .3s;position:relative}
+.metric-card:hover{border-color:var(--green);box-shadow:0 0 20px rgba(0,255,136,0.1)}
+.metric-num{font-size:2rem;font-weight:700;color:var(--green);display:block;margin-bottom:6px}
+.metric-label{font-size:.7rem;color:var(--text);letter-spacing:2px}
+/* TECH */
+.tech-grid{display:flex;flex-wrap:wrap;gap:12px}
+.tech-pill{background:rgba(0,255,136,0.05);border:1px solid var(--border);color:var(--green2);padding:8px 16px;font-size:.7rem;letter-spacing:1px;transition:all .2s}
+.tech-pill:hover{background:rgba(0,255,136,0.1);border-color:var(--green2);color:var(--bright)}
+/* CTA */
+#cta{background:var(--bg2);border-top:1px solid var(--border);text-align:center}
+#cta h2{margin-bottom:12px}
+#cta p{color:var(--text);font-size:.85rem;margin-bottom:32px;line-height:1.7}
+.cta-form{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;max-width:560px;margin:0 auto}
+.cta-form input{flex:1;min-width:220px;background:var(--bg);border:1px solid var(--border);color:var(--bright);padding:12px 16px;font-family:'Fira Code',monospace;font-size:.8rem;outline:none;transition:border .2s}
+.cta-form input:focus{border-color:var(--green)}
+.cta-form input::placeholder{color:#3a5a3a}
 /* FOOTER */
-footer{
-  text-align:center;padding:60px 40px;
-  border-top:1px solid var(--border);color:var(--text-dim);font-size:14px;
-}
-footer a{color:var(--accent)}
-
-@media(max-width:600px){
-  nav{padding:16px 20px}
-  .hero{padding:60px 20px 40px}
-  .hero h1{letter-spacing:-1px}
-  .about,.metrics{padding:40px 20px}
-}
+footer{padding:32px 5%;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:gap;position:relative;z-index:1}
+.footer-copy{font-size:.7rem;color:#3a5a3a;letter-spacing:1px}
+.footer-social{display:flex;gap:16px}
+.footer-social a{color:#3a5a3a;text-decoration:none;font-size:.75rem;transition:color .2s}
+.footer-social a:hover{color:var(--green)}
+/* FADE IN */
+.fade{opacity:0;transform:translateY(24px);transition:opacity .6s,transform .6s}
+.fade.visible{opacity:1;transform:translateY(0)}
+@media(max-width:600px){.nav-links{display:none}.hero-btns{flex-direction:column}footer{flex-direction:column;gap:16px;text-align:center}}
 </style>
 </head>
 <body>
+<div class="bg-anim">
+<div class="shape"></div>
+<div class="shape"></div>
+<div class="shape"></div>
+</div>
+
 <nav>
-  <div class="nav-name">Shellproof</div>
-  <a href="https://early.surge.xyz/discovery" class="btn" target="_blank">View on Surge</a>
+  <a class="nav-logo" href="#">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="sp-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0e1a"/><stop offset="100%" stop-color="#0d1220"/></linearGradient><linearGradient id="sp-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7ee8fa"/><stop offset="100%" stop-color="#4fc3f7"/></linearGradient><linearGradient id="sp-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2d7dd2"/><stop offset="100%" stop-color="#1a5fa8"/></linearGradient><linearGradient id="sp-left" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0d3b6e"/><stop offset="100%" stop-color="#071d3a"/></linearGradient><linearGradient id="sp-inner-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a8edff"/><stop offset="100%" stop-color="#6dd5f7"/></linearGradient><linearGradient id="sp-inner-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3a9bd5"/><stop offset="100%" stop-color="#1e6fa8"/></linearGradient><linearGradient id="sp-inner-left" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0e4a82"/><stop offset="100%" stop-color="#082540"/></linearGradient><filter id="sp-glow"><feGaussianBlur stdDeviation="18" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="sp-glow2"><feGaussianBlur stdDeviation="32" result="blur"/></filter></defs><rect width="512" height="512" rx="96" fill="url(#sp-bg)"/><ellipse cx="256" cy="262" rx="110" ry="80" fill="#2a7fff" opacity="0.18" filter="url(#sp-glow2)"/><polygon points="256,108 348,160 256,212 164,160" fill="url(#sp-top)" filter="url(#sp-glow)"/><polygon points="348,160 348,316 256,368 256,212" fill="url(#sp-right)"/><polygon points="256,212 256,368 164,316 164,160" fill="url(#sp-left)"/><line x1="256" y1="108" x2="256" y2="212" stroke="#9ee8ff" stroke-width="1.2" opacity="0.5"/><line x1="348" y1="160" x2="348" y2="316" stroke="#5ab8e8" stroke-width="1" opacity="0.3"/><line x1="164" y1="160" x2="164" y2="316" stroke="#1a4a7a" stroke-width="1" opacity="0.4"/><polygon points="256,158 308,187 256,216 204,187" fill="url(#sp-inner-top)" opacity="0.92"/><polygon points="308,187 308,272 256,301 256,216" fill="url(#sp-inner-right)" opacity="0.92"/><polygon points="256,216 256,301 204,272 204,187" fill="url(#sp-inner-left)" opacity="0.92"/><polygon points="256,158 308,187 256,216 204,187" fill="none" stroke="#a0eeff" stroke-width="1" opacity="0.6"/><path d="M272,230 L280,238 L296,218" stroke="#7ee8fa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.85"/></svg>
+    <span>SHELLPROOF</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#problem">PROBLEM</a></li>
+    <li><a href="#solution">SOLUTION</a></li>
+    <li><a href="#features">FEATURES</a></li>
+    <li><a href="#how-it-works">HOW IT WORKS</a></li>
+    <li><a href="#metrics">METRICS</a></li>
+  </ul>
+  <a href="#cta" class="btn">$ GET_ACCESS</a>
 </nav>
 
-<section class="hero">
-  <div class="logo-container"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- STYLE: isometric 3D cube shell with inner light -->
-  <defs>
-    <linearGradient id="sp-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0a0518"/>
-      <stop offset="100%" stop-color="#18082e"/>
-    </linearGradient>
-    <linearGradient id="sp-top" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#B388FF"/>
-      <stop offset="100%" stop-color="#7C4DFF"/>
-    </linearGradient>
-    <linearGradient id="sp-left" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#5E35B1"/>
-      <stop offset="100%" stop-color="#3D1E78"/>
-    </linearGradient>
-    <linearGradient id="sp-right" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#4527A0"/>
-      <stop offset="100%" stop-color="#28145C"/>
-    </linearGradient>
-    <radialGradient id="sp-core" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00F5FF"/>
-      <stop offset="100%" stop-color="#00F5FF" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="512" height="512" rx="96" fill="url(#sp-bg)"/>
-  <g transform="translate(256,270)">
-    <!-- glow behind cube -->
-    <circle r="150" fill="url(#sp-core)" opacity="0.6"/>
-    <!-- isometric cube -->
-    <polygon points="0,-140 130,-65 130,75 0,150 -130,75 -130,-65" fill="#0a0518"/>
-    <!-- top face -->
-    <polygon points="0,-140 130,-65 0,10 -130,-65" fill="url(#sp-top)"/>
-    <!-- right face -->
-    <polygon points="130,-65 130,75 0,150 0,10" fill="url(#sp-right)"/>
-    <!-- left face -->
-    <polygon points="-130,-65 -130,75 0,150 0,10" fill="url(#sp-left)"/>
-    <!-- edge highlights -->
-    <polyline points="-130,-65 0,-140 130,-65" fill="none" stroke="#E1BEE7" stroke-width="3" stroke-linejoin="round"/>
-    <polyline points="0,-140 0,10" fill="none" stroke="#E1BEE7" stroke-width="2" opacity="0.5"/>
-    <!-- cyan core dot on top -->
-    <circle cx="0" cy="-65" r="10" fill="#00F5FF"/>
-  </g>
-</svg>
-</div>
-  <h1>Shellproof</h1>
-  <p class="tagline">Proof-carrying shells for autonomous agents</p>
-  <div class="badges"><span class="badge">agent-infra</span><span class="badge">arbitrum</span><span class="badge">prototype</span></div>
-  <a href="https://early.surge.xyz/discovery" class="btn" target="_blank">Follow on Surge Discovery</a>
+<section id="hero">
+  <div class="hero-inner">
+    <div class="hero-pre">// BASE NETWORK &gt; CYBERSECURITY &gt; <span>MVP LIVE</span></div>
+    <div class="hero-logo-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="h-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0e1a"/><stop offset="100%" stop-color="#0d1220"/></linearGradient><linearGradient id="h-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7ee8fa"/><stop offset="100%" stop-color="#4fc3f7"/></linearGradient><linearGradient id="h-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2d7dd2"/><stop offset="100%" stop-color="#1a5fa8"/></linearGradient><linearGradient id="h-left" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0d3b6e"/><stop offset="100%" stop-color="#071d3a"/></linearGradient><linearGradient id="h-inner-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a8edff"/><stop offset="100%" stop-color="#6dd5f7"/></linearGradient><linearGradient id="h-inner-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3a9bd5"/><stop offset="100%" stop-color="#1e6fa8"/></linearGradient><linearGradient id="h-inner-left" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0e4a82"/><stop offset="100%" stop-color="#082540"/></linearGradient><filter id="h-glow"><feGaussianBlur stdDeviation="18" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="h-glow2"><feGaussianBlur stdDeviation="32" result="blur"/></filter></defs><rect width="512" height="512" rx="96" fill="url(#h-bg)"/><ellipse cx="256" cy="262" rx="110" ry="80" fill="#2a7fff" opacity="0.18" filter="url(#h-glow2)"/><polygon points="256,108 348,160 256,212 164,160" fill="url(#h-top)" filter="url(#h-glow)"/><polygon points="348,160 348,316 256,368 256,212" fill="url(#h-right)"/><polygon points="256,212 256,368 164,316 164,160" fill="url(#h-left)"/><line x1="256" y1="108" x2="256" y2="212" stroke="#9ee8ff" stroke-width="1.2" opacity="0.5"/><line x1="348" y1="160" x2="348" y2="316" stroke="#5ab8e8" stroke-width="1" opacity="0.3"/><line x1="164" y1="160" x2="164" y2="316" stroke="#1a4a7a" stroke-width="1" opacity="0.4"/><polygon points="256,158 308,187 256,216 204,187" fill="url(#h-inner-top)" opacity="0.92"/><polygon points="308,187 308,272 256,301 256,216" fill="url(#h-inner-right)" opacity="0.92"/><polygon points="256,216 256,301 204,272 204,187" fill="url(#h-inner-left)" opacity="0.92"/><polygon points="256,158 308,187 256,216 204,187" fill="none" stroke="#a0eeff" stroke-width="1" opacity="0.6"/><path d="M272,230 L280,238 L296,218" stroke="#7ee8fa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.85"/></svg>
+    </div>
+    <div class="ascii-border">╔══════════════════════════════════════════════════════════╗</div>
+    <h1>Breaches Can't Hide<br><span>When Every Call Leaves Proof.</span><span class="cursor"></span></h1>
+    <p class="hero-tagline">
+      Shellproof wraps your Base smart contracts in a cryptographic accountability layer — intercepting every privileged call, generating tamper-evident ZK receipts, and anchoring immutable audit logs to EIP-4844 blob storage. No redeployment. No source changes. No plausible deniability.
+    </p>
+    <div class="hero-btns">
+      <a href="#cta" class="btn btn-solid">$ REQUEST_EARLY_ACCESS</a>
+      <a href="#how-it-works" class="btn">$ VIEW_DOCS --how-it-works</a>
+    </div>
+    <div class="ascii-border">╚══════════════════════════════════════════════════════════╝</div>
+  </div>
 </section>
 
-<section class="about">
-  <h2>What we're building</h2>
-  <p>Every action an AI agent takes carries a signed proof of the policy it checked before execution. Shellproof is an infrastructure layer that wraps any autonomous agent in a verifiable compliance shell.\n\nAgents declare their constraints once. Shellproof monitors runtime behavior, generates zero-knowledge attestations, and logs them on-chain. If an agent violates its declared policy, the proof fails and the transaction is halted before settlement.</p>
-
+<section id="problem">
+  <div class="section-label">// IDENTIFIED_THREAT_VECTOR</div>
+  <h2>The <span>Invisible Admin</span> Problem</h2>
+  <div class="problem-content fade">
+    <p>In 2023 and 2024, over <strong>$2.8B in on-chain assets</strong> were drained through exploits that began with a single privileged function call — an upgrade, a pause, a role reassignment — that nobody caught in time. The tragedy isn't just the loss. It's that the evidence existed on-chain the entire time, buried in raw calldata that no one was watching.</p>
+    <p>DAO governance documents say one thing. The actual execution record says another. When a <strong>solo admin wallet calls a multisig-guarded function</strong> at 3am UTC, there is no alert, no receipt, no structured forensic trail that an insurance underwriter or a governance committee can act on. Protocol teams are flying blind, patching after the fact, and issuing post-mortems with incomplete evidence.</p>
+    <p>Existing audit tools snapshot code at a single point in time. They don't watch runtime behavior. They don't prove <em>who called what, when, and whether it was authorized</em>. That gap between static audit and live execution is where <strong>sophisticated attackers operate</strong> — and where reputational and financial damage compounds.</p>
+  </div>
 </section>
 
-<section class="metrics"><h2>Key Metrics</h2><div class="metrics-grid"><div class="metric-card"><div class="metric-value">Live on testnet</div><div class="metric-label">Compliance Engine</div></div>
-<div class="metric-card"><div class="metric-value">Rust + TypeScript</div><div class="metric-label">Agent SDK</div></div>
-<div class="metric-card"><div class="metric-value">Sub-second ZK attestation</div><div class="metric-label">Proof Generation</div></div>
-<div class="metric-card"><div class="metric-value">Fully on-chain verification</div><div class="metric-label">Architecture</div></div>
-<div class="metric-card"><div class="metric-value">Any EVM-compatible agent</div><div class="metric-label">Integration</div></div>
-<div class="metric-card"><div class="metric-value">Halt-before-settle</div><div class="metric-label">Security Model</div></div>
-</div></section>
+<section id="solution">
+  <div class="section-label">// SOLUTION_ARCHITECTURE</div>
+  <h2>Non-Invasive. <span>Cryptographically Binding.</span> Fully On-Chain.</h2>
+  <div class="solution-box fade">
+    <p>Shellproof deploys as an <code>ERC-2535 Diamond-compatible proxy</code> that wraps your existing contract deployments without requiring redeployment or source modifications. It intercepts privileged function selectors — <code>upgradeTo()</code>, <code>pause()</code>, <code>transferOwnership()</code> — at the proxy layer before execution reaches your logic.</p>
+    <p>Each intercepted call triggers a <code>Groth16 ZK proof</code> generated via SnarkJS, cryptographically binding the caller address, function selector, block timestamp, and block hash into a tamper-evident permission receipt. These receipts are anchored to <code>EIP-4844 blob storage</code> — fully on-chain, immutable, and ~80% cheaper than calldata equivalents.</p>
+    <p>A Base-native dashboard powered by <code>The Graph</code> lets security leads query structured logs, diff admin activity against declared governance rules, and fire real-time webhook alerts when anomalies are detected. Exportable <code>JSON compliance bundles</code> give protocol teams defensible forensic records for insurance underwriters, governance disclosures, and post-incident reporting — the moment they're needed.</p>
+  </div>
+</section>
+
+<section id="features">
+  <div class="section-label">// FEATURE_MANIFEST</div>
+  <h2>Everything Your Protocol <span>Needs to Prove Accountability</span></h2>
+  <div class="features-grid">
+    <div class="feat-card fade">
+      <div class="feat-icon">&#x25C6;</div>
+      <h3>ZERO-KNOWLEDGE RECEIPTS</h3>
+      <p>Every privileged call generates a Groth16 ZK proof binding caller, selector, timestamp, and block hash. Mathematically unforgeable — even by the protocol team itself.</p>
+    </div>
+    <div class="feat-card fade">
+      <div class="feat-icon">&#x25A6;</div>
+      <h3>NON-INVASIVE PROXY WRAP</h3>
+      <p>ERC-2535 Diamond-compatible deployment wraps existing contracts without redeployment. Drop Shellproof in front of any Base contract in under 10 minutes.</p>
+    </div>
+    <div class="feat-card fade">
+      <div class="feat-icon">&#x2630;</div>
+      <h3>EIP-4844 BLOB ANCHORING</h3>
+      <p>Audit logs stored as EIP-4844 blobs — fully on-chain, immutable, and 80% cheaper than calldata. Your compliance trail survives even if your frontend doesn't.</p>
+    </div>
+    <div class="feat-card fade">
+      <div class="feat-icon">&#x26A1;</div>
+      <h3>REAL-TIME ANOMALY ALERTS</h3>
+      <p>Webhook notifications fire instantly when solo-signer calls hit multisig-guarded selectors. Catch governance violations in seconds, not post-mortems.</p>
+    </div>
+    <div class="feat-card fade">
+      <div class="feat-icon">&#x2726;</div>
+      <h3>GOVERNANCE DIFF ENGINE</h3>
+      <p>Structured log queries let DAO security leads compare actual admin execution against declared governance rules. See the delta between policy and reality.</p>
+    </div>
+    <div class="feat-card fade">
+      <div class="feat-icon">&#x2665;</div>
+      <h3>COMPLIANCE BUNDLES</h3>
+      <p>One-click JSON export produces defensible forensic records accepted by insurance underwriters and governance committees. Audit-ready in seconds.</p>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works">
+  <div class="section-label">// EXECUTION_FLOW</div>
+  <h2>Four Steps to <span>Cryptographic Accountability</span></h2>
+  <div class="steps">
+    <div class="step fade">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>DEPLOY THE PROXY WRAPPER</h3>
+        <p>Point Shellproof's ERC-2535 Diamond proxy at your existing Base contract address. No source changes, no redeployment, no migration — your contract logic stays exactly as deployed. Takes under 10 minutes via the Shellproof CLI.</p>
+      </div>
+    </div>
+    <div class="step fade">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>INTERCEPT PRIVILEGED SELECTORS</h3>
+        <p>Shellproof's proxy layer monitors declared privileged function selectors. Every call to <code style="color:var(--green);font-size:.75rem">upgradeTo()</code>, <code style="color:var(--green);font-size:.75rem">pause()</code>, or any custom admin selector is captured before it reaches your logic contract.</p>
+      </div>
+    </div>
+    <div class="step fade">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>GENERATE ZK PROOF &amp; ANCHOR LOG</h3>
+        <p>SnarkJS generates a Groth16 proof binding the call context into a tamper-evident receipt. The receipt is anchored to EIP-4844 blob storage, creating a permanent, on-chain, cryptographically verifiable audit entry at 80% lower cost than calldata.</p>
+      </div>
+    </div>
+    <div class="step fade">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>QUERY, ALERT, AND EXPORT</h3>
+        <p>The Graph indexes your logs for instant structured queries. The dashboard surfaces governance diffs and fires real-time webhook alerts on anomalies. Export JSON compliance bundles for insurers, auditors, and post-incident reporting on demand.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="metrics">
+  <div class="section-label">// SYSTEM_BENCHMARKS</div>
+  <h2>Built on <span>Proven Cryptographic Primitives</span></h2>
+  <div class="metrics-grid">
+    <div class="metric-card fade">
+      <span class="metric-num">~80%</span>
+      <span class="metric-label">LOG STORAGE COST REDUCTION<br>vs. calldata via EIP-4844</span>
+    </div>
+    <div class="metric-card fade">
+      <span class="metric-num">Groth16</span>
+      <span class="metric-label">ZK PROOF SYSTEM<br>via SnarkJS — battle-tested</span>
+    </div>
+    <div class="metric-card fade">
+      <span class="metric-num">ERC-2535</span>
+      <span class="metric-label">DIAMOND PROXY COMPAT<br>+ Safe multisig SDK</span>
+    </div>
+    <div class="metric-card fade">
+      <span class="metric-num">0</span>
+      <span class="metric-label">CONTRACT CHANGES REQUIRED<br>non-invasive middleware</span>
+    </div>
+    <div class="metric-card fade">
+      <span class="metric-num">&lt;10min</span>
+      <span class="metric-label">INTEGRATION TIME<br>via Shellproof CLI</span>
+    </div>
+    <div class="metric-card fade">
+      <span class="metric-num">100%</span>
+      <span class="metric-label">ON-CHAIN LOG ANCHORING<br>fully immutable via blobs</span>
+    </div>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="section-label">// TECH_STACK</div>
+  <h2>Assembled from <span>Best-in-Class Infrastructure</span></h2>
+  <div class="tech-grid fade">
+    <span class="tech-pill">ERC-2535 Diamond Proxy</span>
+    <span class="tech-pill">Groth16 ZK Proofs</span>
+    <span class="tech-pill">SnarkJS</span>
+    <span class="tech-pill">EIP-4844 Blob Storage</span>
+    <span class="tech-pill">Base / OP Stack L2</span>
+    <span class="tech-pill">Foundry</span>
+    <span class="tech-pill">The Graph</span>
+    <span class="tech-pill">Safe Multisig SDK</span>
+    <span class="tech-pill">Node.js Webhooks</span>
+    <span class="tech-pill">Selector Parsing</span>
+  </div>
+</section>
+
+<section id="cta">
+  <div class="section-label">// REQUEST_ACCESS</div>
+  <h2>Secure Your Protocol. <span>Prove It to Everyone.</span></h2>
+  <p>Join the security leads, DAO treasuries, and DeFi protocols building on Base who are making breaches impossible to hide. Early access includes white-glove proxy deployment support and a custom governance rule configuration session.</p>
+  <form class="cta-form" onsubmit="return false">
+    <input type="email" placeholder="your@protocol.xyz" required>
+    <button type="submit" class="btn btn-solid">$ INITIALIZE --request-access</button>
+  </form>
+</section>
 
 <footer>
-  <p>Shellproof &middot; Powered by <a href="https://early.surge.xyz" target="_blank">Surge Discovery</a></p>
+  <span class="footer-copy">© 2026 Shellproof. All rights reserved. // ON-CHAIN AUDIT TRAILS FOR BASE</span>
+  <div class="footer-social">
+    <a href="#">&#x1D54F; TWITTER</a>
+    <a href="#">&#x1F4AC; DISCORD</a>
+    <a href="#">&#x2731; GITHUB</a>
+    <a href="#">&#x25B6; DOCS</a>
+  </div>
 </footer>
+
+<script>
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.fade').forEach(el=>obs.observe(el));
+</script>
 </body>
 </html>
